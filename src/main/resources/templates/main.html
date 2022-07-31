@@ -1,0 +1,245 @@
+<!-- main.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="shortcut icon" href="#">
+    <meta charset="UTF-8">
+    <title>메일 센더</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- b4 CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- jQuery.js / popper.js / Bootstrap4.js -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            $('.starRev span').click(function(){
+                $(this).parent().children('span').removeClass('ons');
+                $(this).addClass('ons').prevAll('span').addClass('ons');
+                $("#RE_LIKE").val($(this).text());
+                return false;
+            });
+            $('#summernote').summernote({
+                height: 300,
+                minHeight: null,
+                maxHeight: null,
+                focus: true,
+                callbacks: {
+                    onImageUpload: function(files, editor, welEditable) {
+                        for (var i = files.length - 1; i >= 0; i--) {
+                            sendFile(files[i], this);
+                        }
+                    }
+                }
+            });
+        });
+        function sendFile(file, el) {
+            /*var form_data = new FormData();
+            form_data.append('file', file);
+            $.ajax({
+                data: form_data,
+                type: "POST",
+                url: "/mail/contentImage",
+                cache: false,
+                contentType: false,
+                enctype: 'multipart/form-data',
+                processData: false,
+                success: function(url) {
+                    //url=url.trim();
+
+                    $(el).summernote('editor.insertImage', "/images/reviewImage/"+url);
+                }
+            });*/
+            var form_data = new FormData();
+            form_data.append('image', file);
+
+            var settings = {
+                "url": "https://api.imgbb.com/1/upload?key=fb7919d655df24d1bd0ed366a3a724bd",
+                "method": "POST",
+                "timeout": 0,
+                "processData": false,
+                "mimeType": "multipart/form-data",
+                "contentType": false,
+                "data": form_data
+            };
+
+            $.ajax(settings).done(function (response) {
+               /* let data = JSON.parse(response);
+                $('.output').html(`<img src="${data.data.display_url}" />`);
+                console.log(data);*/
+                let data = JSON.parse(response);
+                $(el).summernote('editor.insertImage', data.data.display_url);
+            });
+
+        }
+        function getBoard(){
+            var option = $("#option option:selected").val();
+
+            $.ajax({
+                data: {option : option},
+                type: "POST",
+                url: "/mail/getBoard",
+                dataType : "json",
+                success: function(data) {
+
+                    $('#summernote').summernote('code', data.content);
+                    $('#subject').val(data.subject);
+
+
+
+                },error : function( error ) {
+                    $('#summernote').summernote('code', "");
+                    $('#subject').val("");
+                }
+
+            });
+        }
+
+        $(function () {
+
+            getBoard();
+            $("#option").change(function(){
+
+                getBoard();
+            });
+
+            $('#add').click(function () {
+                $('.emailList').append(
+                    '        <div class="form-group">\n' +
+                    '            <div class="input-group">\n' +
+                    '                <input class="form-control"  name="to" placeholder="이메일 주소">\n' +
+                    '            </div>\n' +
+                    '        </div>'
+                );
+            });
+
+            $('#submit').click(function () {
+                var form_data = $("form[name=saveForm]").serialize() ;
+                if($("#subject").val()==""){
+                    alert("제목을 입력하세요.");
+                    return;
+                }
+                if($("#summernote").summernote('isEmpty')){
+                    alert("내용을 입력하세요.");
+                    return;
+                }
+
+                $.ajax({
+                    data: form_data,
+                    type: "POST",
+                    url: "/mail/saveForm",
+                    dataType : "json",
+                    success: function(data) {
+                        alert(data.success);
+                        var url = /*[[@{/main}]]*/
+
+                        location.href= url;
+
+                    }
+
+                });
+
+                //$("#saveForm").submit();
+            });
+            $('#selectMail').click(function () {
+
+                var option = $("#option option:selected").val();
+                $.ajax({
+                    data: {option : option},
+                    type: "POST",
+                    url: "/mail/selectMail",
+                    dataType : "json",
+                    success: function(data) {
+                        alert("선택했습니다")
+                        var url = /*[[@{/main}]]*/
+
+                            location.href= url;
+                    },error : function( error ) {
+
+                    }
+
+                });
+
+                //$("#saveForm").submit();
+            });
+            $('#async-label').click(function () {
+                let async = $('#async');
+                let bol = async.val();
+                async.val(bol === 'false');
+            });
+
+            $('#sendMail').click(function () {
+                alert("선송요청완료");
+                //var option = $("#option option:selected").val();
+                $.ajax({
+                    type: "POST",
+                    url: "/api/v1/orders/send/notification",
+                    dataType : "json",
+                    success: function(data) {
+
+
+
+                    },error : function( error ) {
+
+                    }
+
+                });
+            });
+
+        });
+
+    </script>
+
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1>메일 발송</h1>
+    <form id="saveForm" name="saveForm" class="form-block" method="post">
+        <div class="emailList">
+            <div class="form-group">
+                <div class="input-group">
+                    <!--<input class="form-control"  name="to" placeholder="이메일 주소">
+                    <div class="input-group-append">
+                        <button id="add" class="btn btn-primary form-control" type="button">추가</button>
+                    </div>-->
+                     <h3 th:text="'현재선택된메일 : '+${selectMail}"></h3>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="input-group">
+                <input class="form-control" id="subject" name="subject" placeholder="제목">
+                <div class="input-group-append p-2">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="async" name="async" value="false">
+                        <label class="custom-control-label" style="user-select: none" id="async-label" for="async">비동기 처리</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <select class="form-control" id="option" name="option">
+                <option value="option1">option1</option>
+                <option value="option2">option2</option>
+                <option value="option3">option3</option>
+            </select>
+        </div>
+        <div class="form-group" >
+            <!--<textarea class="form-control" name="text" placeholder="메일 내용을 입력해주세요." cols="60" rows="20"></textarea>-->
+
+            <textarea class="form-control" id="summernote" name="content" placeholder="content" maxlength="8000" rows="7"></textarea>
+
+        </div>
+        <div class="form-group">
+            <button id="submit" type="button" class="form-control" >옵션저장</button>
+            <button id="selectMail" type="button" class="form-control" >보낼메일선택</button>
+            <button id="sendMail" type="button" class="form-control" >선택된메일발송</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

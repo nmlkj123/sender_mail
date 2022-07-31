@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="amin.code.orders.mailMarketing.mapper.MailMapper">
+
+    <select id="getBoard" parameterType="map" resultType="map">
+        select * from mail_board where seq=#{option}
+    </select>
+    <select id="getSelectMail" resultType="map">
+        select * from select_option
+    </select>
+    <update id="delBoard" parameterType="map" >
+        delete from mail_board where seq=#{option}
+    </update>
+    <update id="delselectMail" parameterType="map" >
+        delete from select_option where 1=1
+    </update>
+    <insert id="writeBoard" parameterType="map" >
+        insert into mail_board
+                    (
+                        seq,
+                        content,
+                        u_date,
+                        subject
+                    )
+             values
+                (
+                    #{option},
+                    #{content},
+                    NOW(),
+                    #{subject}
+                )
+    </insert>
+    <insert id="selectMail" parameterType="map" >
+        insert into select_option
+        (
+            gbn
+        )
+        values
+            (
+                #{option}
+            )
+    </insert>
+
+
+</mapper>
